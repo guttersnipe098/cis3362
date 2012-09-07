@@ -20,10 +20,26 @@ sub f( $$$ );
 #################
 
 # DECLARE VARIABLES
-my $a = 5;
-my $b = 4;
+print "Enter your values for the affine function.\n\n";
+
+print "a: ";
+my $a = <STDIN>;
+
+# was our input sane?
+unless( $a =~ m/[0-9]+/ ){
+	die "ERROR: You have entered an invalid number";
+}
+
+print "b: ";
+my $b = <STDIN>;
+
+# was our input sane?
+unless( $a =~ m/[0-9]+/ ){
+	die "ERROR: You have entered an invalid number";
+}
 
 # call our recurssive function and print its output
+print "----------\n";
 print f( $a, $b, 1 );
 
 exit 0;
