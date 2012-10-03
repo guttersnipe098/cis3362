@@ -10,14 +10,90 @@ public class Logic2 {
 		
 		//hard code values to test 
 		byte plainText[] = new byte[6];
-		plainText[0]=(byte) 255;
-		plainText[1]=(byte) 170;
-		plainText[2]=(byte) 0;
-		plainText[3]=(byte) 0;
-		plainText[4]=(byte) 0;
-		plainText[5]=(byte) 170;
+		plainText[0]=(byte) 127;
+		plainText[1]=(byte) 10;
+		plainText[2]=(byte) 40;
+		plainText[3]=(byte) 50;
+		plainText[4]=(byte) 64;
+		plainText[5]=(byte) 66;
 		
-		unorder(plainText);
+
+		System.out.print("The byte array:");
+		printByteArrayHex(plainText);
+		System.out.println();
+		
+		plainText=unorder(plainText);
+
+		System.out.print("The byte array after the unorder operation:");
+		printByteArrayHex(plainText);
+		System.out.println();
+		
+		plainText=reorder(plainText);
+		
+		System.out.print("The byte array after the reorder operation:");
+		printByteArrayHex(plainText);
+		System.out.println();
+		
+		
+	}
+
+	private static byte[] reorder(byte[] plainText) {
+		int count= 0,i,j;
+		boolean array1[][]= new boolean [4][4];
+		boolean array2[][]= new boolean [4][4];
+		boolean array3[][]= new boolean [4][4];
+		
+		
+		boolean[] bits = byteArr2BitArr(plainText);
+		//printBitSet(bits);
+		
+		boolean[] shifted = new boolean[8*plainText.length];
+
+		//stores the bits into the arrays
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				array1[i][j]=bits[count];
+				count++;
+			}
+		}
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				array2[i][j]=bits[count];
+				count++;
+			}
+		}
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				array3[i][j]=bits[count];
+				count++;
+			}
+		}
+		
+		//puts the bits into a BitSet that has been shifted
+		count = 0;
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				shifted[count]=array3[i][j];
+				count++;
+			}
+		}
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				shifted[count]=array1[i][j];
+				count++;
+			}
+		}
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				shifted[count]=array2[i][j];
+				count++;
+			}
+		}
+
+		//printBitSet(shifted);
+
+		//changes the boolean array to a byte array
+		return(bitArr2ByteArr(shifted));
 		
 		
 	}
@@ -29,12 +105,9 @@ public class Logic2 {
 		boolean array2[][]= new boolean [4][4];
 		boolean array3[][]= new boolean [4][4];
 		
-		System.out.print("The byte array before the unorder operation:");
-		printByteArrayHex(plainText);
 		
 		boolean[] bits = byteArr2BitArr(plainText);
-		System.out.println("The length of the bit set:"+bits.length);
-		printBitSet(bits);
+		//printBitSet(bits);
 		
 		boolean[] shifted = new boolean[8*plainText.length];
 
@@ -79,17 +152,11 @@ public class Logic2 {
 			}
 		}
 
-		System.out.println("The length of the bit set:"+shifted.length+" It should be:"+count);
-		printBitSet(shifted);
-		
 		//changes the boolean array to a byte array
-		
-		
-		
 		return(bitArr2ByteArr(shifted));
 		
 	}
-	
+
 	private static void printBitSet(boolean[] bits) {
 		
 		for(int i=1;i<bits.length+1;i++){
@@ -113,10 +180,13 @@ public class Logic2 {
 		
 		for(i=1;i<array.length+1;i++){
 			
-			System.out.print((array[i-1]));
-			
+			System.out.print(array[i-1]);
+
+			//formatting
 			if(i%2==0)
 				System.out.print(" ");
+			else
+				System.out.print(".");
 		}
 		
 	}
