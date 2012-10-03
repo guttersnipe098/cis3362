@@ -3,6 +3,7 @@
 * Purpose: Helper functions for the crypto challenge project to assist in the
 *          manipulation of BitSet objects
 * Authors: Michael Alfield <maltfield@knights.ucf.edu>
+*          Blake Parmeter <Blakep@knights.ucf.edu>
 * Course: CIS 3362 <http://www.cs.ucf.edu/courses/cis3362/fall2012/>
 * Created: 2012-10-01
 * Updated: 2012-10-01
