@@ -305,29 +305,11 @@ public class DES {
 		return ans;
 	}
 	
-	// main has been replaced by encryptLine()
-	/****************************************************************************
-	* Name:    encryptBlock
-	* Purpose: Encrypts a block of lines (each 10x Radix-64 characters) using DES
-	* Input:   plaintext - an array of Strings (each element contains 10x
-	*                      Radix-64 characters) for the plaintext that will be
-	*                      encrypted
-	*          key       - an array of integers (each element is either a 0 or a
-	*                      1) for the symmetric key used to encrypt the plaintext
-	* Output:  returns the DES cyphertext, padded as per the hw3 requirements
-	****************************************************************************/
-	public static String encryptBlock(String[] plaintext, int[] key) throws Exception {
+	public static void main(String[] args) throws Exception {
 		
-		/*********************
-		* CHECK INPUT SANITY *
-		*********************/
-
-		if( key.length != 64 ){
-			System.out.println( "ERROR: invalid key length!" );
-			return "";
-		}
-/*
+		
 		Scanner stdin = new Scanner(System.in);
+		
 		
 		// Get the necessary user information...
 		System.out.println("Enter the input file.");
@@ -345,12 +327,8 @@ public class DES {
 		// Set up the keys.
 		int[] mykey = getKey(key);
 		DES code = new DES(mykey);
-*/
-
-		DES code = new DES(key);
 		code.setKeys();
 		
-/*
 		// Read in each block and process...
 		while (fin.hasNext()) {
 			String myblock = fin.next();
@@ -362,27 +340,9 @@ public class DES {
 			code.encrypt();
 			code.print(fout);			
 		}
-*/
-
-		for( int i=0; i<plaintext.length; i++ ){
-			System.out.println( plaintext[i] );
-		}
 	
-/*
 		fout.close();
 		fin.close();
-*/
-
-		return "ilied!";
-	}
-
-	public static void main( String[] args ) throws Exception {
-
-		String[] plaintext = { "hellothere", "blakeandmi", "chaelinhec" };
-		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
-
-		System.out.println( encryptBlock( plaintext, key ) );
-
 	}
 	
 }
