@@ -317,6 +317,9 @@ public class DES {
 	* Output:  returns the DES cyphertext, padded as per the hw3 requirements
 	****************************************************************************/
 	public static String encryptBlock(String[] plaintext, int[] key) throws Exception {
+
+		// DECLARE VARIABLES
+		String output = "";
 		
 		/*********************
 		* CHECK INPUT SANITY *
@@ -364,21 +367,131 @@ public class DES {
 		}
 */
 
+		// loop through every line in this block
 		for( int i=0; i<plaintext.length; i++ ){
-			System.out.println( plaintext[i] );
+
+			// DECLARE VARIABLES
+			String plaintextBitString = "";
+
+			System.out.println( "INFO: currently encrypting: " + plaintext[i] );
+
+			// is this a valid line?
+			if( plaintext[i].length() != 10 ){
+				// this is not a valid line because it does not have 10 characters
+				System.out.println( "ERROR: Invalid plaintext input!" );
+				return "";
+			}
+
+			//code.setBlock( plaintext[i] );
+			//code.encrypt();
+
+			//System.out.println( getCipher() );
+			for( int j=0; j<plaintext[i].length(); j++ ){
+
+				//System.out.print( code.block[j] + "|" );
+				System.out.print( "\t" + plaintext[i].charAt(j) + " = " );
+				//System.out.println( (((int)plaintext[i].charAt(j))-'A') + " " );
+				System.out.println( radix2BitString( plaintext[i].charAt(j) ) );
+				plaintextBitString += radix2BitString( plaintext[i].charAt(j) );
+
+			}
+
+			// pad the (10 characters) * (6 bits/character) = 60 bit string with 4
+			// 0s, so it becomes a 64-bit string
+			plaintextBitString += "0000";
+
+			code.setBlock( plaintextBitString );
+			code.encrypt();
+			System.out.println( "INFO: finished encrytion!" );
+
+			for( int j=0; j<code.block.length; j+=6 ){
+
+				// DECLARE VARIABLES
+				String bitstring = "";
+
+				bitstring += code.block[j];
+				bitstring += code.block[j+1];
+
+				// 64 mod 6 = 4, so the last 4 digits of our 11th Radix-64 character
+				// should be padding
+				if( j+5 < code.block.length ){
+					bitstring += code.block[j+2];
+					bitstring += code.block[j+3];
+					bitstring += code.block[j+4];
+					bitstring += code.block[j+5];
+				} else {
+					bitstring += "0000";	
+				}
+
+				output += bitString2Radix( bitstring );
+			}
+			output += "\n";
 		}
+
 	
 /*
 		fout.close();
 		fin.close();
 */
 
-		return "ilied!";
+		return output;
+	}
+
+	// takes a radix character and outputs a String representing the 6-bit value
+	public static String radix2BitString( char radixChar ){
+
+		System.out.println( "\n--BEGIN radix2BitString()--" );
+		// DECLARE VARIABLES
+		String output = "";
+		int value;
+
+		System.out.println( "|" +radixChar+ "|" );
+		value = (((int)radixChar)-'A');
+		value = 
+		System.out.println( "|" +value+ "|" );
+
+		output = Integer.toBinaryString(value);
+
+		while( output.length() < 6 ){
+			output = "0" + output;
+		}
+
+		System.out.println( "--END radix2BitString()--" );
+		return output;
+
+	}
+
+	// takes a String representing a 6-bit value and returs the cooresponding
+	// Radix-64 character
+	public static char bitString2Radix( String bitstring ){
+
+		// DECLARE VARIABLES
+		char output;
+
+		output = (char)('A'+Integer.parseInt( bitstring, 2 ));
+
+		return output;
+
+	}
+
+	public String getCipher(){
+
+		// DECLARE VARIABLES
+		String output = "";
+
+		for( int j=0; j<block.length; j++ ){
+
+			output += block[j];
+
+		}
+
+		return output;
+
 	}
 
 	public static void main( String[] args ) throws Exception {
 
-		String[] plaintext = { "hellothere", "blakeandmi", "chaelinhec" };
+		String[] plaintext = { "blakeandmi", "chaelinhec", "HELLOTHERE" };
 		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
 
 		System.out.println( encryptBlock( plaintext, key ) );
