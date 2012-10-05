@@ -316,10 +316,11 @@ public class DES {
 	*                      1) for the symmetric key used to encrypt the plaintext
 	* Output:  returns the DES cyphertext, padded as per the hw3 requirements
 	****************************************************************************/
-	public static String encryptBlock(String[] plaintext, int[] key) throws Exception {
+	public static String[] encryptBlock(String[] plaintext, int[] key) throws Exception {
 
 		// DECLARE VARIABLES
-		String output = "";
+		String[] output = new String[plaintext.length];
+		output[0] = "";
 		
 		/*********************
 		* CHECK INPUT SANITY *
@@ -327,7 +328,7 @@ public class DES {
 
 		if( key.length != 64 ){
 			System.out.println( "ERROR: invalid key length!" );
-			return "";
+			return output;
 		}
 /*
 		Scanner stdin = new Scanner(System.in);
@@ -373,13 +374,15 @@ public class DES {
 			// DECLARE VARIABLES
 			String plaintextBitString = "";
 
+			output[i] = "";
+
 			System.out.println( "INFO: currently encrypting: " + plaintext[i] );
 
 			// is this a valid line?
 			if( plaintext[i].length() != 10 ){
 				// this is not a valid line because it does not have 10 characters
 				System.out.println( "ERROR: Invalid plaintext input!" );
-				return "";
+				return output;
 			}
 
 			//code.setBlock( plaintext[i] );
@@ -406,9 +409,6 @@ public class DES {
 
 			for( int j=0; j<code.block.length; j+=6 ){
 
-				// DECLARE VARIABLES
-				String bitstring = "";
-
 				bitstring += code.block[j];
 				bitstring += code.block[j+1];
 
@@ -420,12 +420,16 @@ public class DES {
 					bitstring += code.block[j+4];
 					bitstring += code.block[j+5];
 				} else {
+					// these next 4 bits are our special case: they are the last 4
+					// bits of the entire 64-bit bitstring
 					bitstring += "0000";	
 				}
 
-				output += bitString2Radix( bitstring );
+				output[i] += bitString2Radix( bitstring );
 			}
-			output += "\n";
+
+			output[i] = bitString2Radix( bitstring );
+
 		}
 
 	
@@ -440,15 +444,23 @@ public class DES {
 	// takes a radix character and outputs a String representing the 6-bit value
 	public static String radix2BitString( char radixChar ){
 
-		System.out.println( "\n--BEGIN radix2BitString()--" );
 		// DECLARE VARIABLES
 		String output = "";
 		int value;
 
-		System.out.println( "|" +radixChar+ "|" );
 		value = (((int)radixChar)-'A');
-		value = 
-		System.out.println( "|" +value+ "|" );
+
+		// handle special cases where ASCII differs from Radix-64 encoding
+		if( value > 31 ){
+			// fixes lower-case letters
+			value  -= 6;
+		} else if( value == -22 ){
+			//fixes (+)
+			value = 62;
+		} else if( value == -18 ){
+			// fixes (/)
+			value = 63;
+		}
 
 		output = Integer.toBinaryString(value);
 
@@ -456,20 +468,30 @@ public class DES {
 			output = "0" + output;
 		}
 
-		System.out.println( "--END radix2BitString()--" );
 		return output;
 
 	}
+
+/*
+	// takes a 6-bit value and returns the cooresponding Radix-64 character
+	//public static String 
+*/
 
 	// takes a String representing a 6-bit value and returs the cooresponding
 	// Radix-64 character
 	public static char bitString2Radix( String bitstring ){
 
 		// DECLARE VARIABLES
+		int value;
 		char output;
 
-		output = (char)('A'+Integer.parseInt( bitstring, 2 ));
+		System.out.println( "Our bitstring = " + bitstring );
+		value = Integer.parseInt( bitstring, 2 );
+		System.out.println( "value = " + value );
+		System.out.println();
 
+		// TODO: remove
+		output = 'a';
 		return output;
 
 	}
@@ -491,10 +513,17 @@ public class DES {
 
 	public static void main( String[] args ) throws Exception {
 
-		String[] plaintext = { "blakeandmi", "chaelinhec", "HELLOTHERE" };
+		// DECLARE VARIABLES
+		String[] ciphertext;
+
+		String[] plaintext = { "abcdefgxyz", "chaelinhec", "ABLLOT+/YZ" };
 		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
 
-		System.out.println( encryptBlock( plaintext, key ) );
+		ciphertext = encryptBlock( plaintext, key );
+
+		for( int i=0; i<ciphertext.length; i++ ){
+			System.out.println( ciphertext[i] );
+		}
 
 	}
 	
