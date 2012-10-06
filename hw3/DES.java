@@ -373,10 +373,11 @@ public class DES {
 
 			// DECLARE VARIABLES
 			String plaintextBitString = "";
+			String ciphertextBitString = "";
 
 			output[i] = "";
 
-			System.out.println( "INFO: currently encrypting: " + plaintext[i] );
+			System.out.println( "INFO: currently encrypting: (plaintext:  " +plaintext[i]+ ")" );
 
 			// is this a valid line?
 			if( plaintext[i].length() != 10 ){
@@ -388,47 +389,46 @@ public class DES {
 			//code.setBlock( plaintext[i] );
 			//code.encrypt();
 
-			//System.out.println( getCipher() );
 			for( int j=0; j<plaintext[i].length(); j++ ){
 
-				//System.out.print( code.block[j] + "|" );
-				System.out.print( "\t" + plaintext[i].charAt(j) + " = " );
-				//System.out.println( (((int)plaintext[i].charAt(j))-'A') + " " );
-				System.out.println( radix2BitString( plaintext[i].charAt(j) ) );
 				plaintextBitString += radix2BitString( plaintext[i].charAt(j) );
 
 			}
 
-			// pad the (10 characters) * (6 bits/character) = 60 bit string with 4
-			// 0s, so it becomes a 64-bit string
+			// pad the (10 characters) * (6 bits/character) = 60-bit bitstring with
+			// 4x 0s, so it becomes a 64-bit string
 			plaintextBitString += "0000";
 
 			code.setBlock( plaintextBitString );
 			code.encrypt();
-			System.out.println( "INFO: finished encrytion!" );
+			System.out.print( "INFO: finished encrytion!" );
 
 			for( int j=0; j<code.block.length; j+=6 ){
 
-				bitstring += code.block[j];
-				bitstring += code.block[j+1];
+				ciphertextBitString += code.block[j];
+				ciphertextBitString += code.block[j+1];
+				ciphertextBitString += code.block[j+2];
+				ciphertextBitString += code.block[j+3];
 
-				// 64 mod 6 = 4, so the last 4 digits of our 11th Radix-64 character
-				// should be padding
+				// 64 mod 6 = 4, so the last (6-4=) 2 digits of our 11th Radix-64
+				// characters should be padding
 				if( j+5 < code.block.length ){
-					bitstring += code.block[j+2];
-					bitstring += code.block[j+3];
-					bitstring += code.block[j+4];
-					bitstring += code.block[j+5];
+					// we are not at the end of the string
+					ciphertextBitString += code.block[j+4];
+					ciphertextBitString += code.block[j+5];
 				} else {
-					// these next 4 bits are our special case: they are the last 4
-					// bits of the entire 64-bit bitstring
-					bitstring += "0000";	
+					// these next 2 bits are our special case: they are the last 2
+					// bits of the entire 66-bit ciphertextBitString. We pad this
+					// bitstring so that it is divisble by 6, in order to make an
+					// 11-character Radix-64 string.
+					ciphertextBitString += "00";
 				}
 
-				output[i] += bitString2Radix( bitstring );
+				//output[i] += bitString2Radix( ciphertextBitString );
 			}
 
-			output[i] = bitString2Radix( bitstring );
+			output[i] = bitString2Radix( ciphertextBitString );
+			System.out.println( "   (ciphertext: " +output[i]+ ")\n" );
 
 		}
 
@@ -472,38 +472,53 @@ public class DES {
 
 	}
 
-/*
-	// takes a 6-bit value and returns the cooresponding Radix-64 character
-	//public static String 
-*/
-
-	// takes a String representing a 6-bit value and returs the cooresponding
-	// Radix-64 character
-	public static char bitString2Radix( String bitstring ){
-
-		// DECLARE VARIABLES
-		int value;
-		char output;
-
-		System.out.println( "Our bitstring = " + bitstring );
-		value = Integer.parseInt( bitstring, 2 );
-		System.out.println( "value = " + value );
-		System.out.println();
-
-		// TODO: remove
-		output = 'a';
-		return output;
-
-	}
-
-	public String getCipher(){
+	// takes a String representing a 64-bit bitstring and returs the
+	// cooresponding Radix-64 character
+	public static String bitString2Radix( String bitstring ){
 
 		// DECLARE VARIABLES
 		String output = "";
 
-		for( int j=0; j<block.length; j++ ){
+		// is the given bitstring a valid Radix-64 string?
+		if( (bitstring.length() % 6) != 0 ){
+			// the given bitstring is not divisible by 6, so it is invalid!
+			System.out.println( "ERROR: bitstring is not divisble by 6!" );
+			return "";
+		}
 
-			output += block[j];
+		// loop through each 6-bit sub-bitstring of the entire bitstring
+		for( int i=0; i<bitstring.length(); i+=6 ){
+
+			// DECLARE VARIABLES
+			String sixbits; // holds this iteration's 6-bit sub-bitstring
+			int value;
+
+			// get this iteration's 6-bit sub-bitstring
+			sixbits = bitstring.substring( i, i+6 );
+
+			// determine the numerical value of the 6-bit bitstring
+			value = Integer.parseInt( sixbits, 2 );
+
+			// add offset so that 0 (==A in Radix-64) becomes 65 (==A in ASCII)
+			value += 'A';
+
+			// handle special cases where ASCII differs from Radix-64 encoding
+			if( value == 127 ){
+				//fixes (+)
+				value = 43;
+			} else if( value == 128 ){
+				// fixes (/)
+				value = 47;
+			} else if( value > 116 ){
+				// fixes numbers
+				value -= 69;
+			} else if( value > 90 ){
+				// fixes lower-case letters
+				value  += 6;
+			}
+
+			// append the Radix-64 character for this 6-bit sub-bitstring to result
+			output += (char)(value);
 
 		}
 
@@ -513,18 +528,168 @@ public class DES {
 
 	public static void main( String[] args ) throws Exception {
 
+/*
+	// * This block of code was used to initially encrypt a series of test
+	// * strings, which will be used below to test our cracking brute-force
+	// * attempts.
+
 		// DECLARE VARIABLES
 		String[] ciphertext;
 
 		String[] plaintext = { "abcdefgxyz", "chaelinhec", "ABLLOT+/YZ" };
-		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
+		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		ciphertext = encryptBlock( plaintext, key );
 
 		for( int i=0; i<ciphertext.length; i++ ){
 			System.out.println( ciphertext[i] );
 		}
+		// result is:
+		// abcdefgxyz => pDULfUtUivE
+		// chaelinhec => Nf/tIAd+6cI
+		// ABLLOT+/YZ => 0G+BU/6GKfk
+*/
+		/***********************
+		* BRUTE FORCE THE KEY! *
+		***********************/
+
+		// DECLARE VARIABLES
+		String plaintext = "ABLLOT+/YZ";
+		String ciphertext = "0G+BU/6GKfk";
+		int[] key;
+
+		// attempt to determinte the key by brute force!
+		key = bruteForce( plaintext, ciphertext );
+
+		// print the cracked key
+		System.out.println( "Key found!" );
+		for( int i=0; i<key.length; i++ ){
+			System.out.print( key[i] );
+		}
+		System.out.println();
+	}
+
+	// takes a matching plaintext and ciphertext pair and attempts to crack the
+	// key using brute-force
+	public static int[] bruteForce( String plaintext, String ciphertext ) throws Exception{
+		// TODO: figure out why the key is not being found!
+
+		// DECLARE VARIABLES
+		String[] result;
+		String[] plaintextArg = {plaintext};
+		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+		// loop through every possible key
+		do{
+
+			// check to see if this iteration of the key is valid or not
+			if( keyIsInvalid( key ) ){
+				// this key is not valid as per the requirements; skip it.
+				key = iterateKey( key );
+				continue;
+			}
+	
+			System.out.print( "INFO: Attempting key: " );
+			// print this iteration's key for the user
+			for( int k=0; k<key.length; k++ ){
+				System.out.print( key[k] );
+			}
+			System.out.println();
+
+			// encrypt the plaintext with this iteration's key
+			result = encryptBlock( plaintextArg, key );
+
+			// does the encrypted plaintext with this iteration's key match our
+			// known iphertext?
+			if( result[0].equals(ciphertext) ){
+				// the ciphertext for this plaintext + key combination matches our
+				// known ciphertext, which means we found the key!
+				System.out.println( "INFO: We found the key!!" );
+				return key;
+			}
+			
+			key = iterateKey( key );
+
+		} while( moreKeysExist(key) );
+
+		// if we made it this far, we did not find a key!
+		System.out.println( "ERROR: Brute froce complete, but key not found! Please verify the accuracy of your plaintext<-->ciphertext pair!" );
+		int[] keyFail = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+		return keyFail;
 
 	}
-	
+
+	// returns true if there are still keys to be tried
+	// returns false if all perumations of keys have been extingusihed
+	public static boolean moreKeysExist( int[] key ){
+
+		// our key permutations start with a 64-bit bitstring of all 0s, then we
+		// add 1 to the bitstring until all of the bits are 1. Therefore, this
+		// function should return false if and only if all of the bits in key == 1
+
+		// iterate through all of the bits in the key
+		for( int i=0; i<key.length; i++ ){
+			// is this bit a 0?
+			if( key[i] == 0 ){
+				// a zero exists in the key, so more keys *do* exist
+				return true;
+			}
+		}
+
+		// if we made it this far, no 0s exist in the key.
+		// we have extinguished all possible permutations of the key
+		// no more keys exist!
+		return false;
+
+	}
+
+	// iterates the int[] key (pseudo) bitstring by adding 1 to it.
+	public static int[] iterateKey( int[] key ){
+
+		int i;
+
+		// loop through every bit in the key, starting from the least significant
+		// bit
+		for( i=0; i<key.length; i++ ){
+
+			// set the first possible bit to 1
+			if( key[i] == 0 ){
+				key[i] = 1;
+				break;
+			}
+
+		}
+
+		// now, reset all of the lesser significant bits than the one we just
+		// flipped to be 0
+		while( i>0 ){
+			key[--i] = 0;
+		}
+
+		return key;
+	}
+
+	// returns true if the key does not match the search-space restriction
+	// requirements defined by this HW assignment
+	// returns false otherwise
+	public static boolean keyIsInvalid( int[] key ){
+
+		for( int i=1; i<=key.length; i++ ){
+
+			if( (i>=1 && i<=7) || (i>=9 && i<=15) || (i>=17 && i<= 23 ) ){
+				// any of these i'th bits must match the (i+32)'th bit
+				if( key[i-1] != key[i+32-1] ){
+					return true;
+				}
+			}
+
+		}
+
+		// TODO: check parity bits
+
+		// if we made it this far, the key is valid
+		return false;
+
+	}
+
 }
