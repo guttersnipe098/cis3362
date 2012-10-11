@@ -14,6 +14,8 @@ import java.io.*;
 import java.util.*;
 
 public class DES {
+
+	public static final int DEBUG = 3;
 	
 	private int[] key;
 	private int[][] roundkeys;
@@ -614,7 +616,7 @@ public class DES {
 		String[] result;
 		String[] plaintextArg = {plaintext};
 		int[] dynamicKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		int[] oldKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		int[] oldKey = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		// loop through every possible key
 		do{
@@ -622,11 +624,27 @@ public class DES {
 			// check to see if this iteration of the key is valid or not
 			if( keyIsInvalid( dynamicKey ) ){
 				// this key is not valid as per the requirements; skip it.
-				oldKey = dynamicKey;
+				debug( 3, "Key " +key2Hex(dynamicKey) + " is Invalid; skipping" );
+				oldKey = (int[])dynamicKey.clone();
 				dynamicKey = iterateKey( dynamicKey );
 				continue;
 			}
-			// TODO: check to see if iterateKey() only changed the partiy bit
+
+		// TODO remove debug
+		System.out.print( "INFO: Old key: " );
+		System.out.println( key2Hex(oldKey) );
+		System.out.print( "INFO: New key: " );
+		System.out.println( key2Hex(dynamicKey) );
+
+			// check to see if this iteration of the key only changed a parity bit
+			if( isIterateParityChange(oldKey, dynamicKey) ){
+				// this key is redundant (parity bits are ignored by DES); skip it
+				System.out.println( "INFO: Skipping key!" );
+
+				oldKey = (int[])dynamicKey.clone();
+				dynamicKey = iterateKey( dynamicKey );
+				continue;
+			}
 	
 			System.out.print( "INFO: Attempting key: " );
 			System.out.println( key2Hex(dynamicKey) );
@@ -643,8 +661,14 @@ public class DES {
 				return dynamicKey;
 			}
 			
-			oldKey = dynamicKey;
+			oldKey = (int[])dynamicKey.clone();
 			dynamicKey = iterateKey( dynamicKey );
+
+		// TODO remove debug
+		System.out.print( "INFO3: Old key: " );
+		System.out.println( key2Hex(oldKey) );
+		System.out.print( "INFO3: New key: " );
+		System.out.println( key2Hex(dynamicKey) );
 
 		} while( moreKeysExist(dynamicKey) );
 
@@ -682,11 +706,20 @@ public class DES {
 	// iterates the int[] key (pseudo) bitstring by adding 1 to it.
 	public static int[] iterateKey( int[] key ){
 
+	// TODO: remove debug
+	System.out.print( "\n\nINFO: (iterateKey) Old key: " );
+	// print this iteration's key for the user
+	for( int k=0; k<key.length; k++ ){
+		System.out.print( key[k] );
+		}
+	System.out.println();
+	System.out.println( key2Hex(key) );
+
 		int i;
 
 		// loop through every bit in the key, starting from the least significant
 		// bit
-		for( i=0; i<key.length; i++ ){
+		for( i=key.length-1; i>=0; i=i-1 ){
 
 			// set the first possible bit to 1
 			if( key[i] == 0 ){
@@ -698,9 +731,18 @@ public class DES {
 
 		// now, reset all of the lesser significant bits than the one we just
 		// flipped to be 0
-		while( i>0 ){
-			key[--i] = 0;
+		while( i<key.length-1 ){
+			key[++i] = 0;
 		}
+
+	// TODO: remove debug
+	System.out.print( "INFO: (iterateKey) New key: " );
+	// print this iteration's key for the user
+	for( int k=0; k<key.length; k++ ){
+		System.out.print( key[k] );
+		}
+	System.out.println();
+	System.out.println( key2Hex(key) );
 
 		return key;
 	}
@@ -723,6 +765,43 @@ public class DES {
 
 		// if we made it this far, the key is valid
 		return false;
+
+	}
+
+	// returns true if the only difference between the 2 supplied keys is a
+	// change to parity bits. returns false otherwise.
+	public static boolean isIterateParityChange( int[] oldKey, int[] newKey ){
+
+		// check to see if the keys are the same length
+		if( oldKey.length != newKey.length ){
+			// the given keys are not the same length, so something is wrong!
+			// error & exit
+			System.out.println( "ERROR: Keys supplied are different length!" );
+			System.exit(1);
+		}
+
+		// loop through all bits of the given keys
+		for( int i=0; i<oldKey.length; i++ ){
+
+			// is this bit a parity bit?
+			if( (i-1)%8 == 0 ){
+				// ever eigth bit is a parity bit, so this is a parity bit
+				continue;
+			}
+
+			// if we made it this far, the bits we're comparing are not parity bits
+
+			// do these non-parity bits differ?
+			if( oldKey[i] != newKey[i] ){
+				// these non-parity bits differ, so this iteration is *not* a parity
+				// chagnge; return false
+				return false;
+			}
+
+		}
+
+		// if we made it this far, the keys are either the same or a parity change
+		return true;
 
 	}
 
@@ -782,5 +861,15 @@ public class DES {
 		return hex;
 
 	} // end key2Hex()
+
+	// prints debug messages when DEBUG is set at least to the supplied level
+	public static void debug( int level, String msg ){
+
+		// is the DEBUG boolean true?
+		if( DEBUG >= level ){
+			System.out.println( "DEBUG: " + msg );
+		}
+
+	}
 
 }
