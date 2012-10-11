@@ -534,6 +534,19 @@ public class DES {
 
 	public static void main( String[] args ) throws Exception {
 
+		// TODO remove test
+		String hex = "0123456789ABCDEF";
+		int[] key = getKey( hex );
+
+		System.out.print( "INFO: Got key: " );
+		// print this iteration's key for the user
+		for( int k=0; k<key.length; k++ ){
+			System.out.print( key[k] );
+		}
+		System.out.println();
+
+		System.exit( 1 );
+
 		// DECLARE VARIABLES
 		String[] ciphertext;
 
@@ -565,16 +578,30 @@ public class DES {
 		String[] ciphertext;
 
 		String[] plaintext = { "abcdefgxyz", "chaelinhec", "ABLLOT+/YZ" };
+/*
 		int[] staticKey = {
-		 0, 1, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1
+		};
+*/
+///*
+		int[] staticKey = {
 		 0, 0, 0, 0, 0, 0, 0, 0,
 		 0, 0, 0, 0, 0, 0, 0, 0,
 		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 1, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
 		 0, 0, 0, 0, 0, 0, 0, 0,
 		 0, 0, 0, 0, 0, 0, 0, 0,
 		 0, 0, 0, 0, 0, 0, 0, 0
 		};
+//*/
 		if( keyIsInvalid( staticKey ) ){
 			System.out.println( "ERROR: Invalid Key!" );
 			System.exit(1);
@@ -616,7 +643,7 @@ public class DES {
 		String[] result;
 		String[] plaintextArg = {plaintext};
 		int[] dynamicKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		int[] oldKey = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		int[] oldKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
 		// loop through every possible key
 		do{
@@ -636,6 +663,7 @@ public class DES {
 		System.out.print( "INFO: New key: " );
 		System.out.println( key2Hex(dynamicKey) );
 
+/*
 			// check to see if this iteration of the key only changed a parity bit
 			if( isIterateParityChange(oldKey, dynamicKey) ){
 				// this key is redundant (parity bits are ignored by DES); skip it
@@ -645,6 +673,7 @@ public class DES {
 				dynamicKey = iterateKey( dynamicKey );
 				continue;
 			}
+*/
 	
 			System.out.print( "INFO: Attempting key: " );
 			System.out.println( key2Hex(dynamicKey) );
@@ -706,22 +735,20 @@ public class DES {
 	// iterates the int[] key (pseudo) bitstring by adding 1 to it.
 	public static int[] iterateKey( int[] key ){
 
-	// TODO: remove debug
-	System.out.print( "\n\nINFO: (iterateKey) Old key: " );
-	// print this iteration's key for the user
-	for( int k=0; k<key.length; k++ ){
-		System.out.print( key[k] );
-		}
-	System.out.println();
-	System.out.println( key2Hex(key) );
-
 		int i;
 
 		// loop through every bit in the key, starting from the least significant
 		// bit
 		for( i=key.length-1; i>=0; i=i-1 ){
 
-			// set the first possible bit to 1
+			// is this bit a parity bit?
+			if( i%8 == 0 ){
+				// this bit is a parity bit; skip it
+				debug( 2, "iterateKey() skipped a redundant key (parity)" );
+				continue;
+			}
+
+			// set the first possible bit to 1, then exit the loop
 			if( key[i] == 0 ){
 				key[i] = 1;
 				break;
@@ -735,15 +762,6 @@ public class DES {
 			key[++i] = 0;
 		}
 
-	// TODO: remove debug
-	System.out.print( "INFO: (iterateKey) New key: " );
-	// print this iteration's key for the user
-	for( int k=0; k<key.length; k++ ){
-		System.out.print( key[k] );
-		}
-	System.out.println();
-	System.out.println( key2Hex(key) );
-
 		return key;
 	}
 
@@ -752,11 +770,24 @@ public class DES {
 	// returns false otherwise
 	public static boolean keyIsInvalid( int[] key ){
 
-		for( int i=1; i<=key.length; i++ ){
+		// check that the key length is correct
+		if( key.length != 64 ){
+			// the key length is incorrect! error & exit.
+			System.out.println( "ERROR: Invalid key length!" );
+			System.exit( 1 );
+		}
 
-			if( (i>=1 && i<=7) || (i>=9 && i<=15) || (i>=17 && i<= 23 ) ){
-				// any of these i'th bits must match the (i+32)'th bit
-				if( key[i-1] != key[i+32-1] ){
+		for( int i=63; i>=0; i-- ){
+
+			if(
+			    ( i<=(64- 1) && i>=(64- 7) ) // bit is between  1-7
+			 || ( i<=(64- 9) && i>=(64-15) ) // bit is between  9-15
+			 || ( i<=(64-17) && i>=(64-23) ) // bit is between 17-23
+			){
+				// any of these i'th bits must match the (i-32)'th bit
+				if( key[i] != key[i-32] ){
+					// TODO remove debug
+					//System.out.println( "\t because key["+i+"] ("+key[i]+") != key["+(i-32)+ "] ("+key[i-32]+")" );
 					return true;
 				}
 			}
@@ -784,7 +815,7 @@ public class DES {
 		for( int i=0; i<oldKey.length; i++ ){
 
 			// is this bit a parity bit?
-			if( (i-1)%8 == 0 ){
+			if( (i%8) == 0 ){
 				// ever eigth bit is a parity bit, so this is a parity bit
 				continue;
 			}
