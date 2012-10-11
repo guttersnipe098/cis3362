@@ -330,6 +330,10 @@ public class DES {
 			System.out.println( "ERROR: invalid key length!" );
 			return output;
 		}
+
+		System.out.print( "INFO: Using key:      " );
+		System.out.println( key2Hex(key) );
+
 /*
 		Scanner stdin = new Scanner(System.in);
 		
@@ -528,7 +532,29 @@ public class DES {
 
 	public static void main( String[] args ) throws Exception {
 
-/*
+		// DECLARE VARIABLES
+		String[] ciphertext;
+
+		ciphertext = generate();
+
+		/***********************
+		* BRUTE FORCE THE KEY! *
+		***********************/
+
+		// attempt to find the key for the plaintext & ciphertext
+		// key = 0
+		crack( "ABLLOT+/YZ", ciphertext[2] );
+
+		// we will manually add these values once Arup gives us the plaintext
+		// block!
+		//crack();
+
+	}
+
+	// testing function that generates & returns an array of ciphertext strings
+	// for a fixed plaintext & fixed key.
+	public static String[] generate() throws Exception {
+
 	// * This block of code was used to initially encrypt a series of test
 	// * strings, which will be used below to test our cracking brute-force
 	// * attempts.
@@ -537,34 +563,44 @@ public class DES {
 		String[] ciphertext;
 
 		String[] plaintext = { "abcdefgxyz", "chaelinhec", "ABLLOT+/YZ" };
-		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		int[] staticKey = {
+		 0, 1, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 1, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0
+		};
+		if( keyIsInvalid( staticKey ) ){
+			System.out.println( "ERROR: Invalid Key!" );
+			System.exit(1);
+		}
 
-		ciphertext = encryptBlock( plaintext, key );
+		ciphertext = encryptBlock( plaintext, staticKey );
 
 		for( int i=0; i<ciphertext.length; i++ ){
 			System.out.println( ciphertext[i] );
 		}
-		// result is:
-		// abcdefgxyz => pDULfUtUivE
-		// chaelinhec => Nf/tIAd+6cI
-		// ABLLOT+/YZ => 0G+BU/6GKfk
-*/
-		/***********************
-		* BRUTE FORCE THE KEY! *
-		***********************/
+
+		return ciphertext;
+
+	}
+
+	// brute forces the key from a given plaintext & given ciphertext
+	public static void crack(String plaintext, String ciphertext) throws Exception {
 
 		// DECLARE VARIABLES
-		String plaintext = "ABLLOT+/YZ";
-		String ciphertext = "0G+BU/6GKfk";
-		int[] key;
+		int[] solvedKey;
 
 		// attempt to determinte the key by brute force!
-		key = bruteForce( plaintext, ciphertext );
+		solvedKey = bruteForce( plaintext, ciphertext );
 
 		// print the cracked key
 		System.out.println( "Key found!" );
-		for( int i=0; i<key.length; i++ ){
-			System.out.print( key[i] );
+		for( int i=0; i<solvedKey.length; i++ ){
+			System.out.print( solvedKey[i] );
 		}
 		System.out.println();
 	}
@@ -577,27 +613,26 @@ public class DES {
 		// DECLARE VARIABLES
 		String[] result;
 		String[] plaintextArg = {plaintext};
-		int[] key = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		int[] dynamicKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		int[] oldKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		// loop through every possible key
 		do{
 
 			// check to see if this iteration of the key is valid or not
-			if( keyIsInvalid( key ) ){
+			if( keyIsInvalid( dynamicKey ) ){
 				// this key is not valid as per the requirements; skip it.
-				key = iterateKey( key );
+				oldKey = dynamicKey;
+				dynamicKey = iterateKey( dynamicKey );
 				continue;
 			}
+			// TODO: check to see if iterateKey() only changed the partiy bit
 	
 			System.out.print( "INFO: Attempting key: " );
-			// print this iteration's key for the user
-			for( int k=0; k<key.length; k++ ){
-				System.out.print( key[k] );
-			}
-			System.out.println();
+			System.out.println( key2Hex(dynamicKey) );
 
 			// encrypt the plaintext with this iteration's key
-			result = encryptBlock( plaintextArg, key );
+			result = encryptBlock( plaintextArg, dynamicKey );
 
 			// does the encrypted plaintext with this iteration's key match our
 			// known iphertext?
@@ -605,12 +640,13 @@ public class DES {
 				// the ciphertext for this plaintext + key combination matches our
 				// known ciphertext, which means we found the key!
 				System.out.println( "INFO: We found the key!!" );
-				return key;
+				return dynamicKey;
 			}
 			
-			key = iterateKey( key );
+			oldKey = dynamicKey;
+			dynamicKey = iterateKey( dynamicKey );
 
-		} while( moreKeysExist(key) );
+		} while( moreKeysExist(dynamicKey) );
 
 		// if we made it this far, we did not find a key!
 		System.out.println( "ERROR: Brute froce complete, but key not found! Please verify the accuracy of your plaintext<-->ciphertext pair!" );
@@ -685,11 +721,66 @@ public class DES {
 
 		}
 
-		// TODO: check parity bits
-
 		// if we made it this far, the key is valid
 		return false;
 
 	}
+
+	// takes a int[] key and returns a more human-friendly hex representation
+	public static String key2Hex( int [] key ){
+
+		// DECLARE VARIABLES
+		int value;
+		String hex = "";
+
+		for( int i=0; i<key.length; i=i+4 ){
+
+			String fourbits = "";
+
+			for( int j=i; j<i+4; j++ ){
+
+				if( key[j] == 0 ){
+					fourbits += '0';
+				} else if( key[j] == 1 ){
+					fourbits += '1';
+				} else {
+					System.out.println( "ERROR: unexpected value in key string (needs to be either a 0 or 1)!" );
+					fourbits += '?';
+				}
+
+			}
+
+			// pad to get a byte
+			fourbits = "0000" + fourbits;
+
+			// determine the numerical value of the 4-bit bitstring
+			value = Integer.parseInt( fourbits, 2 );
+
+			switch( value ){
+				case 0: hex += '0'; break;
+				case 1: hex += '1'; break;
+				case 2: hex += '2'; break;
+				case 3: hex += '3'; break;
+				case 4: hex += '4'; break;
+				case 5: hex += '5'; break;
+				case 6: hex += '6'; break;
+				case 7: hex += '7'; break;
+				case 8: hex += '8'; break;
+				case 9: hex += '9'; break;
+				case 10: hex += 'A'; break;
+				case 11: hex += 'B'; break;
+				case 12: hex += 'C'; break;
+				case 13: hex += 'D'; break;
+				case 14: hex += 'E'; break;
+				case 15: hex += 'F'; break;
+				default: hex += '?';
+
+			}
+
+		}
+
+		return hex;
+
+	} // end key2Hex()
 
 }
