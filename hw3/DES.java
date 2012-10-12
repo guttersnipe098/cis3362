@@ -333,8 +333,7 @@ public class DES {
 			return output;
 		}
 
-		System.out.print( "INFO: Using key:      " );
-		System.out.println( key2Hex(key) );
+		debug( 1, "Using key:       " + key2Hex(key) );
 
 /*
 		Scanner stdin = new Scanner(System.in);
@@ -383,7 +382,7 @@ public class DES {
 
 			output[i] = "";
 
-			System.out.println( "INFO: currently encrypting: (plaintext:  " +plaintext[i]+ ")" );
+			debug( 1, "currently encrypting: (plaintext:  " +plaintext[i]+ ")" );
 
 			// is this a valid line?
 			if( plaintext[i].length() != 10 ){
@@ -407,7 +406,8 @@ public class DES {
 
 			code.setBlock( plaintextBitString );
 			code.encrypt();
-			System.out.print( "INFO: finished encrytion!" );
+	
+			debug( 1, "finished encryption!" );
 
 			for( int j=0; j<code.block.length; j+=6 ){
 
@@ -534,19 +534,6 @@ public class DES {
 
 	public static void main( String[] args ) throws Exception {
 
-		// TODO remove test
-		String hex = "0123456789ABCDEF";
-		int[] key = getKey( hex );
-
-		System.out.print( "INFO: Got key: " );
-		// print this iteration's key for the user
-		for( int k=0; k<key.length; k++ ){
-			System.out.print( key[k] );
-		}
-		System.out.println();
-
-		System.exit( 1 );
-
 		// DECLARE VARIABLES
 		String[] ciphertext;
 
@@ -578,30 +565,31 @@ public class DES {
 		String[] ciphertext;
 
 		String[] plaintext = { "abcdefgxyz", "chaelinhec", "ABLLOT+/YZ" };
-/*
 		int[] staticKey = {
 		 0, 0, 0, 0, 0, 0, 0, 0,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1,
-		 1, 1, 1, 1, 1, 1, 1, 1
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 1, 0, 1, 1, 1, 1, 1, 0
+		};
+/*
+		// an example of a key following soon after 0x0x0000040000000400
+		// ...which is the first run iteration of a key with a duplicated bit
+		int[] staticKey = {
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 1, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 1, 0, 0,
+		 1, 0, 1, 1, 1, 1, 1, 0
 		};
 */
-///*
-		int[] staticKey = {
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0,
-		 0, 0, 0, 0, 0, 0, 0, 0
-		};
-//*/
+
 		if( keyIsInvalid( staticKey ) ){
 			System.out.println( "ERROR: Invalid Key!" );
 			System.exit(1);
@@ -628,25 +616,58 @@ public class DES {
 
 		// print the cracked key
 		System.out.println( "Key found!" );
+		System.out.print("0b");
 		for( int i=0; i<solvedKey.length; i++ ){
+
+			// space out every 4-bit sequence
+			if( i%4 == 0 ){
+				System.out.print(" ");
+			}
+
 			System.out.print( solvedKey[i] );
 		}
 		System.out.println();
+		System.out.println( "0x " + key2Hex(solvedKey) );
 	}
 
 	// takes a matching plaintext and ciphertext pair and attempts to crack the
 	// key using brute-force
 	public static int[] bruteForce( String plaintext, String ciphertext ) throws Exception{
-		// TODO: figure out why the key is not being found!
 
 		// DECLARE VARIABLES
 		String[] result;
 		String[] plaintextArg = {plaintext};
-		int[] dynamicKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+		int[] dynamicKey = {
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0
+		};
+/*
+		// an example of the key iteration immediately before 0x0x0000040000000400
+		// ...which is the first run iteration of a key with a duplicated bit
+		int[] dynamicKey = {
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 1, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 0, 0,
+		 0, 0, 0, 0, 0, 0, 1, 1,
+		 1, 1, 1, 1, 1, 1, 1, 1
+		};
+*/
 		int[] oldKey = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
 		// loop through every possible key
 		do{
+
+			debug( 1, "Iteration's key: " + key2Hex(dynamicKey) );
 
 			// check to see if this iteration of the key is valid or not
 			if( keyIsInvalid( dynamicKey ) ){
@@ -656,27 +677,6 @@ public class DES {
 				dynamicKey = iterateKey( dynamicKey );
 				continue;
 			}
-
-		// TODO remove debug
-		System.out.print( "INFO: Old key: " );
-		System.out.println( key2Hex(oldKey) );
-		System.out.print( "INFO: New key: " );
-		System.out.println( key2Hex(dynamicKey) );
-
-/*
-			// check to see if this iteration of the key only changed a parity bit
-			if( isIterateParityChange(oldKey, dynamicKey) ){
-				// this key is redundant (parity bits are ignored by DES); skip it
-				System.out.println( "INFO: Skipping key!" );
-
-				oldKey = (int[])dynamicKey.clone();
-				dynamicKey = iterateKey( dynamicKey );
-				continue;
-			}
-*/
-	
-			System.out.print( "INFO: Attempting key: " );
-			System.out.println( key2Hex(dynamicKey) );
 
 			// encrypt the plaintext with this iteration's key
 			result = encryptBlock( plaintextArg, dynamicKey );
@@ -692,12 +692,6 @@ public class DES {
 			
 			oldKey = (int[])dynamicKey.clone();
 			dynamicKey = iterateKey( dynamicKey );
-
-		// TODO remove debug
-		System.out.print( "INFO3: Old key: " );
-		System.out.println( key2Hex(oldKey) );
-		System.out.print( "INFO3: New key: " );
-		System.out.println( key2Hex(dynamicKey) );
 
 		} while( moreKeysExist(dynamicKey) );
 
@@ -742,14 +736,15 @@ public class DES {
 		for( i=key.length-1; i>=0; i=i-1 ){
 
 			// is this bit a parity bit?
-			if( i%8 == 0 ){
+			if( (i+1)%8 == 0 ){
 				// this bit is a parity bit; skip it
-				debug( 2, "iterateKey() skipped a redundant key (parity)" );
+				debug(2, "iterateKey() skipped a redundant key (parity) for i=" +i);
 				continue;
 			}
 
 			// set the first possible bit to 1, then exit the loop
 			if( key[i] == 0 ){
+				debug(3, "iterateKey() enabled key[" +i+ "]" );
 				key[i] = 1;
 				break;
 			}
@@ -777,21 +772,15 @@ public class DES {
 			System.exit( 1 );
 		}
 
-		for( int i=63; i>=0; i-- ){
+		for( int i=1; i<=key.length; i++ ){
 
-			if(
-			    ( i<=(64- 1) && i>=(64- 7) ) // bit is between  1-7
-			 || ( i<=(64- 9) && i>=(64-15) ) // bit is between  9-15
-			 || ( i<=(64-17) && i>=(64-23) ) // bit is between 17-23
-			){
-				// any of these i'th bits must match the (i-32)'th bit
-				if( key[i] != key[i-32] ){
-					// TODO remove debug
-					//System.out.println( "\t because key["+i+"] ("+key[i]+") != key["+(i-32)+ "] ("+key[i-32]+")" );
-					return true;
-				}
+			if( (i>=1 && i<=7) || (i>=9 && i<=15) || (i>=17 && i<= 23 ) ){
+
+					// any of these i'th bits must match the (i+32)'th bit
+					if( key[i-1] != key[i+32-1] ){
+							return true;
+					}
 			}
-
 		}
 
 		// if we made it this far, the key is valid
