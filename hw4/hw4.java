@@ -15,11 +15,18 @@ import java.util.*;
 import java.util.regex.*;
 import java.math.BigInteger;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class hw4 {
 	
 	// GLOBAL SETTINGS
-	public final static char DEBUG = 3;
+	public final static char DEBUG = 0;
 	public final static BigInteger one = new BigInteger("1");
+	public final static BigInteger oneHundred = new BigInteger( "100" );
 	
 	public static void main(String[] args) {
 
@@ -30,9 +37,14 @@ public class hw4 {
 		BigInteger e = new BigInteger("3");
 		BigInteger n, phi, d;
 
-		boolean encrypt = false;         // true if encrypting; false if decryting
-		String infile = "";           // file to get plaintext or ciphertext
-		String outfile = "";          // file to get plaintext or ciphertext
+		boolean encrypt = false;  // true if encrypting; false if decryting
+		String infile = "";       // filename to input the plain or ciphertext
+		String input = "";        // holds the contents of infile
+		String outfile = "";      // filename to output the plain or ciphertext
+		String output = "";       // holds the contents of outfile
+
+		String ciphertext;       // holds the numerical value of the ciphertext
+		int blocksize;           // number of characters to be encrypted per block
 
 		String pattern;          // holds a regex pattern
 		Pattern compiledPattern; // holds a compiled regex pattern
@@ -197,6 +209,19 @@ public class hw4 {
 
 		// Calculate the public key n.
 		n = p.multiply(q);
+
+		// is n large enough to encrypt 2 letters together?
+		if( n.compareTo( new BigInteger("2525") ) < 1 ){
+			// n is too small; error & exit
+
+			System.out.println(
+			 "ERROR: n is too small. Please enter larger values for p and/or q"
+			);
+			System.exit( 1 );
+
+		}
+
+		debug( 1, "n:|" +n+ "|" );
 		
 		// Calculate phi of n, which is secret information.
 		phi = (p.subtract(one)).multiply(q.subtract(one));
@@ -214,38 +239,118 @@ public class hw4 {
 		// Calculate the secret key d. This can be done only with
 		// knowledge of phi of n.
 		d = e.modInverse(phi);
-		System.out.println("The decryption exponent is " + d);
+
+		debug( 1, "d:|" +d+ "|" );
 		
-		// Try out a test message.
-		System.out.println("Enter your message, in between 1 and "+(n.subtract(one)));
+		/*****************************
+		* Get contents of input file *
+		*****************************/
 
-		// TODO: remove this hard-coded line (888) && instead, read in from
-		//       `infile` instead. After reading the contents of `infile`, we
-		//       need to convert the ASCII text (which we can limit to a domain of
-		//       only all-lower-case-characters to simplify this [but then we need
-		//       to error if `infile` contains any non-lower-case characters]) to
-		//       integers so that we can store it to `BigInteger m`.
-		BigInteger m = new BigInteger("888");
+		// try to open the input file
+		try( BufferedReader br = new BufferedReader( new FileReader(infile) ) ){
+			// we successfully opened the input file
+
+			// loop through every character in the input file
+			int i;
+			while( (i = br.read()) != -1 ){
+
+				// is this character an EOF marker?
+				if( i == 10 || i == 13 ){
+					// this character is a newline, so we've reached the EOF
+					break;
+				}
+
+				// does the input file contain plaintext or ciphertext?
+				if( encrypt ){
+					// the input file containts plaintext since we're encrypting
+
+					// is this character a lower-case letter?
+					if( i < 97 || i > 122 ){
+						// this character is *not* a lower-case letter = invalid
+						
+						// since this is an invalid input, we error & exit
+						System.out.println(
+					 	"ERROR: Invalid input (" + (char)i + ")! "+
+					 	"Only lower-case letters are valid plaintext inputs."
+						);
+						System.exit( 1 );
+
+					}
+
+				} else {
+					// the input file contains ciphertext since we're decrypting
+
+					// is this character a number or a space?
+					if( (i!=32 && i<48) || i > 57 ){
+						// this character is *not* a number or a space = invalid
+						// since this is an invalid input, we error & exit
+						System.out.println(
+					 	"ERROR: Invalid input (" + (char)i + ")! "+
+					 	"Only numbers are valid ciphertext inputs."
+						);
+						System.exit( 1 );
+
+					}
+
+				}
+
+				// if we made it this far, the character is legal; add it to the
+				// input String
+				input += (char)i;
+
+			}
+
+
+		} catch( IOException exception ){
+			// there was an error opening the input file
+
+			System.out.println(
+			 "\nERROR: Failed to open input file! See stack trace below:\n"
+			);
+			exception.printStackTrace();
+			System.exit( 1 );
+
+		}
+
+		/*********************
+		* Encrypt or Decrypt *
+		*********************/
+
+		// do we want to encrypt or decrypt the contents of the input file?
+		if( encrypt ){
+			// we want to encrypt the contents of the input file
+
+			output = encrypt( input, e, n );
+
+		} else {
+			// we want to decrypt the contents of the input file
+
+			output = decrypt( input, d, n );
+
+		}
+
+		/******************************
+		* Write Result to Output File *
+		******************************/
+
+		// try to open the input file
+		try( BufferedWriter bw = new BufferedWriter( new FileWriter(outfile) ) ){
+			// we successfully opened the output file
+
+			bw.write( output );
+
+		} catch( IOException exception ){
+			// there was an error opening the output file
+
+			System.out.println(
+			 "\nERROR: Failed to open output file! See stack trace below:\n"
+			);
+			exception.printStackTrace();
+			System.exit( 1 );
+
+		}
+
 		
-
-		// TODO: use `boolean encrypt` to determine if we should be encrypting or
-		//       decrypting here.
-
-		// Calculate the corresponding ciphertext.
-		BigInteger c = m.modPow(e, n);
-		System.out.println("Ciphertext is "+c);
-		
-		// Recover the plaintext as the message recipient would.
-		BigInteger mback = c.modPow(d, n);
-		System.out.println("orig m is "+mback);
-
-		// TODO: convert the resulting numerical output back to ASCII.
-		// ...
-
-		// TODO: output the result (converted to ASCII) to `outfile`
-		// ...
-
-		// TODO: if all went well, print a happy 'success' message.
 		
 	}
 	
@@ -275,8 +380,8 @@ public class hw4 {
 	****************************************************************************/
 	public static void printUsage(){		
 		System.out.println(
-		 "hw3 is a protocol for encrypting and decrypting a message using RSA\n\n"
-		+"Usage: hw3 <e|d> <p> <q> <e> <input file> <output file>\n"
+		 "hw4 is a protocol for encrypting and decrypting a message using RSA\n\n"
+		+"Usage: hw4 <e|d> <p> <q> <e> <input file> <output file>\n"
 		+"where:\n"
 		+"\t<e|d>: 'e' means you want to 'encrypt' and 'd' means 'decrypt'\n"
 		+"\t<p>, <q>, <e>: are the inputs defined by the RSA standard\n"
@@ -287,7 +392,6 @@ public class hw4 {
 		);
 	}
 
-	// 
 	/****************************************************************************
 	* Name:    debug
 	* Purpose: prints debug messages when DEBUG is set at least to the supplied
@@ -304,6 +408,258 @@ public class hw4 {
 		if( DEBUG >= level ){
 			System.out.println( "DEBUG: " + msg );
 		}
+
+	}
+
+	/****************************************************************************
+	* Name:    ascii2BigInt
+	* Purpose: No frills function that converts a String of (assumed) lower-case
+	*          ASCII characters into their double-digit, 00-25 ASCII values minus
+	*          97 concatentaed together.
+	* Input:   input - the string to be converted to an integer
+	* Output:  a BigInteger of the 00-25 ASCII values of input concatenated
+	*          together
+	****************************************************************************/
+	public static BigInteger ascii2BigInt( String input ){
+
+		debug( 5, "ascii2BigInt got '" +input+ "'" );
+
+		// DECLARE VARIABLES
+		BigInteger output = new BigInteger( "0" );
+		BigInteger value;
+
+		// loop through every character of the input string
+		for( int i=0; i<input.length(); i++ ){
+
+			// determine the value of this character
+			value = new BigInteger( Integer.toString(input.charAt(i) - 'a') );
+
+			// add 2 0s to the right of the value for each new letter
+			value = value.multiply( oneHundred.pow( i ) );
+
+			// add this character to the output sum
+			output = output.add( value );
+
+		}
+
+		debug( 5, "\tascii2BigInt returned '" +output+ "'" );
+
+		return output;
+
+	}
+
+	/****************************************************************************
+	* Name:    bigInt2Ascii
+	* Purpose: No frills function that converts a BigInteger generated by
+	*          ascii2BigInt back to the original String of (assumed) lower-case
+	*          ASCII characters.
+	* Input:   input - the BigInteger to be converted back to its String
+	* Output:  The original String of the input
+	****************************************************************************/
+	public static String bigInt2Ascii( BigInteger input ){
+
+		debug( 5, "bigInt2Ascii got '" +input+ "'" );
+
+		// DECLARE VARIABLES
+		String inputString;
+		String output = "";
+		String character;
+		int value;
+
+		// convert the BigInteger to a String
+		inputString = input.toString();
+
+		// loop through every character of the input string
+		for( int i=inputString.length(); i>0; i-=2 ){
+
+			// peel off the 2-digit 0-25 value of this character (as a String)
+			if( (i-2) < 0 ){
+				character = inputString.substring( i-1, i );
+			} else {
+				character = inputString.substring( i-2, i );
+			}
+
+			// convert this string back to an int
+			value = Integer.parseInt(character) + 'a';
+
+			output += (char)value;
+
+		}
+
+		debug( 5, "\tbigInt2Ascii returned '" +output+ "'" );
+
+		return output;
+
+	}
+
+	/****************************************************************************
+	* Name:    getBlockSize
+	* Purpose: Calculates the (maximum) block size for a given n
+	* Input:   n - the n variable for the RSA cipher
+	* Output:  the blocksize (the number maximum number of characters that can be
+	*          grouped together and en/decrypted by the RSA cipher for n
+	****************************************************************************/
+	public static int getBlockSize( BigInteger n ){
+
+			// DECLARE VARIABLES
+			BigInteger temp;
+			int blocksize = 0;
+
+			// the maximum numerical value that we can encrypt using RSA is equal
+			// to (n-1). Each character has a max value of 25. 2 chars = 2525. 3
+			// chars = 252525, etc. The number of characters that we can encrypt
+			// at once is the blocksize
+
+			// determine the blocksize
+			temp = new BigInteger( "25" );
+			while( n.compareTo(temp) > 0 ){
+				temp = new BigInteger( temp.toString().concat("25") );
+				blocksize++;
+			}
+
+			debug( 5, "\tblocksize:|" +blocksize+ "|" );
+
+			return blocksize;
+	}
+
+	/****************************************************************************
+	* Name:    encrypt
+	* Purpose: Encrypts a given message using RSA
+	* Input:   msg - the plaintext String to encrypt
+	*          e   - the e variable for the RSA cipher
+	*          n   - the n varialbe for the RSA cipher
+	* Output:  The ciphertext for the given message, e, and n
+	****************************************************************************/
+	public static String encrypt( String msg, BigInteger e, BigInteger n ){
+
+			debug( 1, "encrypting msg:|" +msg+ "|" );
+
+			// DECLARE VARIABLES
+			String ciphertext = "";
+			int blocksize;
+
+			// get the blocksize so we know how many characters to encrypt at once
+			blocksize = getBlockSize( n );
+
+			// peel off a substring of blocksize # chars at a time from msg
+			for( int i=0; i<msg.length(); i+=blocksize ){
+
+				// DECLARE VARIABLES
+				String block;
+				BigInteger blockValue;
+				BigInteger encryptedBlockValue;
+
+				// does this block extend beyond the string?
+				if( (i+blocksize) < msg.length() ){
+					// there are at least as many charcters left in the message as
+					// the `blocksize`, grab the next `blocksize` characters
+
+					block = msg.substring( i, i+blocksize );
+
+				} else {
+					// there are less than `blocksize` characters left in msg, so
+					// we just grab the rest
+
+					block = msg.substring( i );
+
+				}
+
+				debug( 4, "\tblock:|" +block+ "|" );
+
+				// convert this block to a numerical value so we can encrypt it
+				blockValue = ascii2BigInt( block );
+
+				debug( 4, "\t\tblockValue:|" +blockValue+ "|" );
+
+				// Calculate the corresponding ciphertext.
+				encryptedBlockValue = blockValue.modPow(e, n);
+
+				debug( 4, "\t\tencryptedBlockValue:|" +encryptedBlockValue+ "|" );
+
+				// append this block's ciphertext to the whole msg's ciphertext
+				ciphertext += encryptedBlockValue + " ";
+
+			}
+
+		// remove the last (unnecessary) space
+		ciphertext = ciphertext.substring( 0, ciphertext.length()-1 );
+
+		debug( 1, "\tciphertext:|" +ciphertext+ "|" );
+		return ciphertext;
+
+	}
+
+	/****************************************************************************
+	* Name:    decrypt
+	* Purpose: Decrypts a given ciphertext using RSA
+	* Input:   msg - the ciphertext String to decrypt
+	*          d   - the e variable for the RSA cipher
+	*          n   - the n varialbe for the RSA cipher
+	* Output:  The ciphertext for the given message, d, and n
+	****************************************************************************/
+	public static String decrypt( String msg, BigInteger d, BigInteger n ){
+
+		debug( 1, "decrypting msg:|" +msg+ "|" );
+
+		// DECLARE VARIABLES
+		String plaintext = "";
+		int blocksize = 0;
+		String block = "";
+		BigInteger blockValue;
+		BigInteger decryptedBlockValue;
+		String decryptedBlock;
+
+		// get the blocksize so we know how many characters to encrypt at once
+		blocksize = getBlockSize( n );
+
+		// loop through each character in the ciphertext
+		for( int i=0; i<msg.length(); i++ ){
+
+			// DECLARE VARIABLES
+			char c;
+
+			c = msg.charAt(i);
+			debug( 5, "\tchar:|" +c+ "|" );
+
+			// is this a new character of the current block, or a delimiter for the
+			// next block?
+			if( c != 32 ){
+				// this is a new character, add it to the current block
+				block += c;
+
+				// have we reached the end of the ciphertext?
+				if( i+1 < msg.length() ){
+					// we haven't reached the end of the ciphertext; keep reading
+					continue;
+				}
+
+			}
+
+			debug( 4, "\tblock:|" +block+ "|" );
+
+			// if we made it this far, we have this entire block; get its numerical
+			// value so we can decrypt it
+			blockValue = new BigInteger( block );
+			debug( 6, "\t\tblockValue:|" +blockValue+ "|" );
+
+			// decrypt this block
+			decryptedBlockValue = blockValue.modPow( d, n );
+			debug( 4, "\t\tdecryptedBlockValue:|" +decryptedBlockValue+ "|" );
+
+			// convert this decrypted block's value back to ASCII
+			decryptedBlock = bigInt2Ascii( decryptedBlockValue );
+			debug( 4, "\t\tdecryptedBlock:|" +decryptedBlock+ "|" );
+
+			// append this decrypted block's ASCII text to the plaintext string
+			plaintext += decryptedBlock;
+
+			// clear this block for the next one
+			block = "";
+
+		}
+
+		debug( 1, "\tplaintext:|" +plaintext+ "|" );
+		return plaintext;
 
 	}
 
